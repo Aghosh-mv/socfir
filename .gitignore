@@ -1,0 +1,54 @@
+# Dependencies
+/node_modules
+/.dart_tool
+/.flutter-plugins
+/.flutter-plugins-dependencies
+/.packages
+/.pub-cache
+/.pub
+/build
+
+# Web build output (large compiled JS)
+/build/web
+/build/app
+
+# Android
+/android/.gradle
+/android/captures
+/android/gradlew
+/android/gradlew.bat
+/android/local.properties
+android/.idea/
+
+# iOS / macOS
+**/ios/Flutter/.last_build_id
+**/ios/Pods
+**/ios/.symlinks
+**/macos/Pods
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VSCode
+.vscode/
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V8
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Dart/Flutter specific
+*.dart_tool/
+.packages
+pubspec.lock
+
+# Environment files (no secrets in repo)
+.env
+.env.*
