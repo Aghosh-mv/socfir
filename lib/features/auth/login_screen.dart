@@ -16,19 +16,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _passwordCtrl = TextEditingController();
   bool _isLoading = false;
 
+  @override
+  void dispose() {
+    _emailCtrl.dispose();
+    _passwordCtrl.dispose();
+    super.dispose();
+  }
+
   Future<void> _login() async {
     setState(() => _isLoading = true);
     try {
       await ref.read(authServiceProvider).signIn(
         _emailCtrl.text.trim(),
-        _passwordCtrl.text.trim(),
+        _passwordCtrl.text, // Don't trim passwords
       );
       if (mounted) context.go('/feed');
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Login Failed: $e'),
-        backgroundColor: Colors.red,
-      ));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Login Failed: $e'),
+          backgroundColor: Colors.red,
+        ));
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

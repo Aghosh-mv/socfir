@@ -39,6 +39,22 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
   String? _bioError;
   String? _educationError;
 
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _emailCtrl.dispose();
+    _passwordCtrl.dispose();
+    _usernameCtrl.dispose();
+    _ageCtrl.dispose();
+    _displayNameCtrl.dispose();
+    _bioCtrl.dispose();
+    _educationCtrl.dispose();
+    _hobbiesCtrl.dispose();
+    _projectsCtrl.dispose();
+    _jobsCtrl.dispose();
+    super.dispose();
+  }
+
   void _clearErrors() {
     setState(() {
       _emailError = null;
@@ -68,7 +84,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
       }
 
       // Validate Password
-      final pass = _passwordCtrl.text.trim();
+      final pass = _passwordCtrl.text;
       if (pass.isEmpty) {
         _passwordError = 'Password is required.';
         isValid = false;
@@ -154,21 +170,26 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
   }
 
   Future<void> _finishSetup() async {
-    if (!_validateStep(0) || !_validateStep(1) || !_validateStep(2)) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Please check all previous steps for invalid inputs!'),
-        backgroundColor: Colors.red,
-      ));
-      return;
+    // Validate all steps, jump to first failing one
+    for (int i = 0; i < 3; i++) {
+      if (!_validateStep(i)) {
+        _pageController.jumpToPage(i);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Step ${i + 1} has errors. Please fix them.'),
+            backgroundColor: Colors.red,
+          ));
+        }
+        return;
+      }
     }
 
     setState(() => _isLoading = true);
     try {
       final age = int.tryParse(_ageCtrl.text.trim()) ?? 18;
-      
       await ref.read(authServiceProvider).signUp(
         email: _emailCtrl.text.trim(),
-        password: _passwordCtrl.text.trim(),
+        password: _passwordCtrl.text, // Don't trim passwords
         username: _usernameCtrl.text.trim(),
         age: age,
         displayName: _displayNameCtrl.text.trim(),
@@ -178,13 +199,14 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
         projects: _projectsCtrl.text.isNotEmpty ? _projectsCtrl.text.split(',').map((e) => e.trim()).toList() : [],
         jobs: _jobsCtrl.text.isNotEmpty ? _jobsCtrl.text.split(',').map((e) => e.trim()).toList() : [],
       );
-      
       if (mounted) context.go('/feed');
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Registration Error: ${e.toString().replaceAll('Exception: ', '')}'),
-        backgroundColor: Colors.red,
-      ));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Registration Error: ${e.toString().replaceAll('Exception: ', '')}'),
+          backgroundColor: Colors.red,
+        ));
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -237,7 +259,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
         children: [
           const Text('The Basics', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          const Text('Let’s get your credentials sorted out.'),
+          const Text('Let\'s get your credentials sorted out.'),
           const SizedBox(height: 32),
           _buildTextField('Email', _emailCtrl, type: TextInputType.emailAddress, errorText: _emailError),
           _buildTextField('Password', _passwordCtrl, isPassword: true, errorText: _passwordError),
@@ -254,7 +276,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
           const SizedBox(height: 32),
           _buildTextField('Display Name', _displayNameCtrl, errorText: _displayNameError),
           _buildTextField('Age (Determines content filters!)', _ageCtrl, type: TextInputType.number, errorText: _ageError),
-          _buildTextField('Bio (Be funny, or don’t)', _bioCtrl, errorText: _bioError),
+          _buildTextField('Bio (Be funny, or don\'t)', _bioCtrl, errorText: _bioError),
         ],
       ),
       // Step 2: Flex a bit

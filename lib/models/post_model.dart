@@ -89,7 +89,9 @@ class Post {
       repostsCount: json['reposts_count'] as int? ?? 0,
       viewsCount: json['views_count'] as int? ?? 0,
       sparksCount: json['sparks_count'] as int? ?? 0,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      createdAt: json['created_at'] != null
+          ? DateTime.tryParse(json['created_at'] as String) ?? DateTime.now()
+          : DateTime.now(),
       authorUsername: json['socfir_users']?['username'] as String?,
       authorAvatarUrl: json['socfir_users']?['avatar_url'] as String?,
       authorDisplayName: json['socfir_users']?['display_name'] as String?,
@@ -163,7 +165,9 @@ class Comment {
       content: json['content'] as String,
       parentId: json['parent_id'] as String?,
       likesCount: json['likes_count'] as int? ?? 0,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      createdAt: json['created_at'] != null
+          ? DateTime.tryParse(json['created_at'] as String) ?? DateTime.now()
+          : DateTime.now(),
       authorUsername: json['socfir_users']?['username'] as String?,
       authorAvatarUrl: json['socfir_users']?['avatar_url'] as String?,
     );

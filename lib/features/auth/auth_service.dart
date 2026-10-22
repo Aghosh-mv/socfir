@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/user_model.dart';
@@ -17,42 +18,58 @@ class AuthService {
 
   AuthService(this._client, this._ref);
 
+  /// Hash password using a salted base64 encoding
+  String _hashPassword(String email, String password) {
+    final salt = 'socfir_salt_${email.toLowerCase()}';
+    return base64.encode(utf8.encode('$salt:$password'));
+  }
+
   /// Helper to get local user database from SharedPreferences
   List<Map<String, dynamic>> _getLocalAccounts() {
     final prefs = _ref.read(sharedPrefsProvider);
     final raw = prefs.getString('registered_users_db');
-    List<Map<String, dynamic>> accounts = [];
     if (raw != null && raw.isNotEmpty) {
       try {
         final List decoded = jsonDecode(raw);
-        accounts = decoded.cast<Map<String, dynamic>>();
+        return decoded.cast<Map<String, dynamic>>();
       } catch (_) {}
     }
+    return [];
+  }
 
-    // Ensure pre-seeded developer/test identity exists out of the box!
-    final hasDevAccount = accounts.any((acc) =>
-        acc['email'].toString().toLowerCase() == 'aghoshpratheesh@gmail.com');
-    if (!hasDevAccount) {
+  /// Ensure dev account exists (debug mode only)
+  Future<void> _ensureDevAccount() async {
+    if (!kDebugMode) return;
+    final accounts = _getLocalAccounts();
+    final has = accounts.any((a) => a['email'] == 'aghoshpratheesh@gmail.com');
+    if (!has) {
       accounts.add({
         'id': 'dev_user_1',
         'email': 'aghoshpratheesh@gmail.com',
-        'password': '123123123',
+        'password': _hashPassword('aghoshpratheesh@gmail.com', '123123123'),
         'username': 'socfirdev',
         'display_name': 'socfirdev',
         'age': 21,
         'bio': 'Developer & Founder of SocFir 🔥',
         'created_at': DateTime.now().toIso8601String(),
       });
-      prefs.setString('registered_users_db', jsonEncode(accounts));
+      await _saveLocalAccounts(accounts);
     }
-
-    return accounts;
   }
 
   /// Helper to save local user database to SharedPreferences
   Future<void> _saveLocalAccounts(List<Map<String, dynamic>> accounts) async {
     final prefs = _ref.read(sharedPrefsProvider);
     await prefs.setString('registered_users_db', jsonEncode(accounts));
+  }
+
+  /// Current user ID: try Supabase first, then fall back to SharedPreferences
+  String? get currentUserId {
+    try {
+      final sbId = _client.auth.currentUser?.id;
+      if (sbId != null) return sbId;
+    } catch (_) {}
+    return _ref.read(sharedPrefsProvider).getString('current_user_id');
   }
 
   /// Real Account Registration
@@ -90,6 +107,7 @@ class AuthService {
       throw Exception('Username cannot be empty.');
     }
 
+    await _ensureDevAccount();
     final localAccounts = _getLocalAccounts();
 
     // Check for duplicate username or email
@@ -150,11 +168,11 @@ class AuthService {
       createdAt: DateTime.now(),
     );
 
-    // Save to local user database
+    // Save to local user database with hashed password
     final accountRecord = {
       'id': userId,
       'email': email.toLowerCase(),
-      'password': password,
+      'password': _hashPassword(email, password),
       'username': username,
       'display_name': displayName ?? username,
       'age': age,
@@ -165,6 +183,9 @@ class AuthService {
     localAccounts.add(accountRecord);
     await _saveLocalAccounts(localAccounts);
 
+    // Persist current_user_id for local use
+    await _ref.read(sharedPrefsProvider).setString('current_user_id', userId);
+
     // Set active user & login state
     _ref.read(isLoggedInProvider.notifier).login();
     _ref.read(currentUserProvider.notifier).setUser(newUser);
@@ -173,45 +194,34 @@ class AuthService {
   /// Real Account Authentication (Sign In)
   Future<void> signIn(String emailOrUsername, String password) async {
     final query = emailOrUsername.trim().toLowerCase();
-    final pass = password.trim();
+    final pass = password; // Do NOT trim passwords
 
     if (query.isEmpty || pass.isEmpty) {
       throw Exception('Please fill in both email/username and password.');
     }
 
-    // Direct Developer Account Guaranteed Match
-    if ((query == 'aghoshpratheesh@gmail.com' || query == 'socfirdev') && pass == '123123123') {
-      final devUser = SocFirUser(
-        id: 'dev_user_1',
-        username: 'socfirdev',
-        email: 'aghoshpratheesh@gmail.com',
-        displayName: 'socfirdev',
-        avatarUrl: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png',
-        age: 21,
-        bio: 'Developer & Founder of SocFir 🔥',
-        isOnboarded: true,
-        createdAt: DateTime.now(),
-      );
-
-      _ref.read(isLoggedInProvider.notifier).login();
-      _ref.read(currentUserProvider.notifier).setUser(devUser);
-      return;
-    }
+    await _ensureDevAccount();
 
     bool supabaseSuccess = false;
 
-    // Try live Supabase Auth first
-    try {
-      final res = await _client.auth.signInWithPassword(
-        email: query,
-        password: pass,
-      );
-      if (res.user != null) {
-        supabaseSuccess = true;
-      }
-    } catch (_) {}
+    // Try live Supabase Auth first (only if it looks like an email)
+    if (query.contains('@')) {
+      try {
+        final res = await _client.auth.signInWithPassword(
+          email: query,
+          password: pass,
+        );
+        if (res.user != null) {
+          supabaseSuccess = true;
+        }
+      } catch (_) {}
+    }
 
     if (supabaseSuccess) {
+      final userId = _client.auth.currentUser?.id;
+      if (userId != null) {
+        await _ref.read(sharedPrefsProvider).setString('current_user_id', userId);
+      }
       _ref.read(isLoggedInProvider.notifier).login();
       await _ref.read(currentUserProvider.notifier).refresh();
       return;
@@ -220,41 +230,45 @@ class AuthService {
     // Local database authentication
     final localAccounts = _getLocalAccounts();
 
-    Map<String, dynamic> match = localAccounts.firstWhere(
-      (acc) =>
-          (acc['email'].toString().toLowerCase() == query ||
-           acc['username'].toString().toLowerCase() == query) &&
-          acc['password'].toString() == pass,
-      orElse: () => {},
-    );
+    // Debug mode: allow dev account with hashed password check
+    Map<String, dynamic> match = {};
 
-    // Auto-create/fallback for valid test email if not found in database
-    if (match.isEmpty) {
-      final emailCheck = EmailVerifier.verifyEmail(query);
-      if (emailCheck.isValid && pass.length >= 6) {
-        final newId = 'auto_user_${DateTime.now().millisecondsSinceEpoch}';
-        final usernameStr = query.split('@')[0];
-        final newAccount = {
-          'id': newId,
-          'email': query,
-          'password': pass,
-          'username': usernameStr,
-          'display_name': usernameStr == 'aghoshpratheesh' ? 'socfirdev' : usernameStr,
-          'age': 21,
-          'created_at': DateTime.now().toIso8601String(),
-        };
-        localAccounts.add(newAccount);
-        await _saveLocalAccounts(localAccounts);
-        match = newAccount;
+    if (kDebugMode) {
+      // Check dev account
+      final devHash = _hashPassword('aghoshpratheesh@gmail.com', '123123123');
+      final devAcc = localAccounts.firstWhere(
+        (acc) =>
+            (acc['email'].toString().toLowerCase() == 'aghoshpratheesh@gmail.com' ||
+             acc['username'].toString().toLowerCase() == 'socfirdev') &&
+            acc['password'].toString() == devHash,
+        orElse: () => {},
+      );
+      if (devAcc.isNotEmpty &&
+          (query == 'aghoshpratheesh@gmail.com' || query == 'socfirdev') &&
+          devAcc['password'] == _hashPassword('aghoshpratheesh@gmail.com', pass)) {
+        match = devAcc;
       }
     }
 
+    // Regular local account lookup (hashed password comparison)
     if (match.isEmpty) {
-      throw Exception('Invalid email/username or password. Please check your credentials.');
+      match = localAccounts.firstWhere(
+        (acc) =>
+            (acc['email'].toString().toLowerCase() == query ||
+             acc['username'].toString().toLowerCase() == query) &&
+            acc['password'].toString() == _hashPassword(acc['email'].toString(), pass),
+        orElse: () => {},
+      );
     }
 
+    if (match.isEmpty) {
+      throw Exception('Account not found. Please sign up first.');
+    }
+
+    final userId = match['id']?.toString() ?? 'local_user';
+
     final userData = SocFirUser(
-      id: match['id'] ?? 'local_user',
+      id: userId,
       username: match['username'] ?? query,
       email: match['email'] ?? query,
       displayName: match['display_name'] ?? match['username'] ?? query,
@@ -265,6 +279,9 @@ class AuthService {
       createdAt: DateTime.now(),
     );
 
+    // Persist current_user_id for local posts/feed
+    await _ref.read(sharedPrefsProvider).setString('current_user_id', userId);
+
     _ref.read(isLoggedInProvider.notifier).login();
     _ref.read(currentUserProvider.notifier).setUser(userData);
   }
@@ -274,6 +291,8 @@ class AuthService {
     try {
       await _client.auth.signOut();
     } catch (_) {}
+    final prefs = _ref.read(sharedPrefsProvider);
+    await prefs.remove('current_user_id');
     _ref.read(isLoggedInProvider.notifier).logout();
     _ref.read(currentUserProvider.notifier).clear();
   }

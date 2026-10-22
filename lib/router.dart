@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -23,9 +24,20 @@ import '../features/confessions/secret_confessions_screen.dart';
 
 import '../shared/utils/app_providers.dart';
 
+class RouterNotifier extends ChangeNotifier {
+  RouterNotifier(this._ref) {
+    _ref.listen(isLoggedInProvider, (_, __) => notifyListeners());
+  }
+  final Ref _ref;
+}
+
+final routerNotifierProvider = Provider<RouterNotifier>((ref) => RouterNotifier(ref));
+
 final routerProvider = Provider<GoRouter>((ref) {
+  final notifier = ref.watch(routerNotifierProvider);
   return GoRouter(
     initialLocation: '/intro',
+    refreshListenable: notifier,
     redirect: (context, state) {
       bool isAuthenticated = false;
       try {
@@ -35,8 +47,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         isAuthenticated = ref.read(isLoggedInProvider);
       }
 
-      final isIntro = state.matchedLocation == '/intro';
-      final isAuth = state.matchedLocation.startsWith('/onboarding') || state.matchedLocation.startsWith('/setup') || state.matchedLocation == '/login';
+      final path = state.matchedLocation;
+      final isIntro = path == '/intro';
+      final isAuth = path.startsWith('/onboarding') || path.startsWith('/setup') || path == '/login';
 
       if (isIntro || isAuth) return null;
       if (!isAuthenticated) return '/intro';

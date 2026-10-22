@@ -13,7 +13,7 @@ class EmailVerificationResult {
 }
 
 class EmailVerifier {
-  static const int currentYear = 2026;
+  static int get currentYear => DateTime.now().year;
 
   // Common fake / disposable email domains to block
   static final Set<String> _blockedDomains = {
@@ -25,6 +25,9 @@ class EmailVerifier {
   // Valid TLDs
   static final Set<String> _validTlds = {
     'com', 'org', 'net', 'edu', 'gov', 'io', 'co', 'in', 'dev', 'me', 'app', 'ai', 'uk', 'ca', 'us', 'de', 'fr', 'tech', 'info',
+    'au', 'jp', 'br', 'ru', 'nl', 'es', 'it', 'pl', 'xyz', 'live', 'online', 'email', 'shop', 'store', 'tv', 'fm', 'cc', 'biz',
+    'name', 'pro', 'id', 'sg', 'nz', 'za', 'ke', 'ng', 'ph', 'mx', 'ar', 'cl', 'cn', 'hk', 'tw', 'eu', 'be', 'ch', 'at', 'se',
+    'no', 'dk', 'fi', 'ie', 'pt', 'tr', 'gr', 'ro', 'hu', 'cz', 'sk', 'hr', 'rs',
   };
 
   /// Verifies email format, blocks disposable/fake domains, and checks valid TLDs

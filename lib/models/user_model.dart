@@ -74,7 +74,9 @@ class SocFirUser {
       leaderboardScore: (json['leaderboard_score'] as num?)?.toDouble() ?? 0,
       leaderboardRank: json['leaderboard_rank'] as int? ?? 0,
       isOnboarded: json['is_onboarded'] as bool? ?? false,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      createdAt: json['created_at'] != null
+          ? DateTime.tryParse(json['created_at'] as String) ?? DateTime.now()
+          : DateTime.now(),
     );
   }
 
@@ -90,7 +92,15 @@ class SocFirUser {
     'jobs': jobs,
     'hobbies': hobbies,
     'projects': projects,
+    'followers_count': followersCount,
+    'following_count': followingCount,
+    'posts_count': postsCount,
+    'likes_count': likesCount,
+    'views_count': viewsCount,
+    'leaderboard_score': leaderboardScore,
+    'leaderboard_rank': leaderboardRank,
     'is_onboarded': isOnboarded,
+    'created_at': createdAt.toIso8601String(),
   };
 
   SocFirUser copyWith({

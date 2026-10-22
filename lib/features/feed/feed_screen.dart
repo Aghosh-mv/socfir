@@ -81,7 +81,12 @@ class FeedScreen extends ConsumerWidget {
       ),
       body: feedAsync.when(
         data: (posts) {
-          final displayPosts = posts.isEmpty ? dummyPosts : posts;
+          final localPosts = ref.watch(localPostsProvider);
+          // Merge: real posts + local posts, deduplicate by id, sort by date
+          final ids = posts.map((p) => p.id).toSet();
+          final merged = [...posts, ...localPosts.where((p) => !ids.contains(p.id))]
+            ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          final displayPosts = merged.isEmpty ? dummyPosts : merged;
           
           return RefreshIndicator(
             onRefresh: () async {

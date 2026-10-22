@@ -208,3 +208,45 @@ $$;
 -- Enable Realtime for messages and notifications
 ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
+
+
+-- ─── ADDITIONAL RLS POLICIES AND INDEXES (appended) ──────────────────────────
+
+-- Likes table: additional policies (using reactions table as likes)
+CREATE TABLE IF NOT EXISTS public.likes (
+  id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  post_id    UUID REFERENCES public.posts(id) ON DELETE CASCADE,
+  user_id    UUID REFERENCES public.socfir_users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(post_id, user_id)
+);
+
+ALTER TABLE public.likes ENABLE ROW LEVEL SECURITY;
+
+-- Users: granular policies
+CREATE POLICY IF NOT EXISTS "Users can read any profile" ON public.socfir_users FOR SELECT USING (true);
+CREATE POLICY IF NOT EXISTS "Users can update own profile" ON public.socfir_users FOR UPDATE USING (auth.uid() = id);
+CREATE POLICY IF NOT EXISTS "Users can insert own profile" ON public.socfir_users FOR INSERT WITH CHECK (auth.uid() = id);
+
+-- Posts: granular policies
+CREATE POLICY IF NOT EXISTS "Public posts are readable" ON public.posts FOR SELECT USING (visibility = 'public' OR auth.uid() = user_id);
+CREATE POLICY IF NOT EXISTS "Auth users can create posts" ON public.posts FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY IF NOT EXISTS "Authors can update own posts" ON public.posts FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY IF NOT EXISTS "Authors can delete own posts" ON public.posts FOR DELETE USING (auth.uid() = user_id);
+
+-- Likes
+CREATE POLICY IF NOT EXISTS "Anyone can read likes" ON public.likes FOR SELECT USING (true);
+CREATE POLICY IF NOT EXISTS "Auth users can like" ON public.likes FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY IF NOT EXISTS "Auth users can unlike own like" ON public.likes FOR DELETE USING (auth.uid() = user_id);
+
+-- Comments: granular policies
+CREATE POLICY IF NOT EXISTS "Anyone can read comments" ON public.comments FOR SELECT USING (true);
+CREATE POLICY IF NOT EXISTS "Auth users can comment" ON public.comments FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY IF NOT EXISTS "Authors can delete own comment" ON public.comments FOR DELETE USING (auth.uid() = user_id);
+
+-- Indexes for performance
+CREATE INDEX IF NOT EXISTS idx_posts_user_id ON public.posts(user_id);
+CREATE INDEX IF NOT EXISTS idx_posts_created_at ON public.posts(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_likes_post_id ON public.likes(post_id);
+CREATE INDEX IF NOT EXISTS idx_comments_post_id ON public.comments(post_id);
+CREATE INDEX IF NOT EXISTS idx_users_username ON public.socfir_users(username);
