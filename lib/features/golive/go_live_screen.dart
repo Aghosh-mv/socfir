@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../shared/theme/app_theme.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 class GoLiveScreen extends StatelessWidget {

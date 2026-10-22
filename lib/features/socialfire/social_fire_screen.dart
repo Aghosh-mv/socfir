@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:timeago/timeago.dart' as timeago;
-import '../../shared/theme/app_theme.dart';
 
 // ─── DATA MODEL ──────────────────────────────────────────────────────────────
 
