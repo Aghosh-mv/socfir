@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/user_model.dart';
 import '../../shared/theme/app_theme.dart';
+import '../../supabase/supabase_service.dart';
+import '../feed/posts_service.dart';
 import '../feed/widgets/post_card.dart';
-import '../feed/feed_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
   final String username;
@@ -11,20 +12,26 @@ class ProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // For now, mock a user. In reality, fetch from Supabase.
-    final user = SocFirUser(
-      id: 'mock-1',
-      username: username,
-      displayName: username == 'me' ? 'Tinker Space' : 'Awesome User',
-      email: 'hello@example.com',
-      bio: 'Building the future of social media, one flutter widget at a time.',
-      followersCount: 1337,
-      followingCount: 42,
-      likesCount: 9001,
-      createdAt: DateTime.now().subtract(const Duration(days: 30)),
-    );
+    final currentUser = ref.watch(currentUserProvider);
+    
+    // Determine profile data: if viewing own profile, use actual currentUser data
+    final isMe = username == 'me' || (currentUser != null && currentUser.username == username);
+    final user = isMe && currentUser != null
+        ? currentUser
+        : SocFirUser(
+            id: 'user_$username',
+            username: username,
+            displayName: username,
+            email: '$username@socfir.app',
+            bio: 'Creator & explorer on SocFir 🔥',
+            followersCount: 120,
+            followingCount: 64,
+            likesCount: 380,
+            createdAt: DateTime.now().subtract(const Duration(days: 15)),
+          );
 
-    final posts = ref.watch(dummyPostsProvider);
+    final allLocalPosts = ref.watch(localPostsProvider);
+    final userPosts = allLocalPosts.where((p) => p.authorUsername == user.username || (isMe && p.userId == user.id)).toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -87,9 +94,23 @@ class ProfileScreen extends ConsumerWidget {
           SliverList(
             delegate: SliverChildBuilderDelegate(
               (context, index) {
-                return PostCard(post: posts[index]);
+                if (userPosts.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.all(32.0),
+                    child: Center(
+                      child: Column(
+                        children: [
+                          Icon(Icons.feed_outlined, size: 48, color: Colors.grey.shade600),
+                          const SizedBox(height: 12),
+                          Text('No posts yet', style: TextStyle(color: Colors.grey.shade500, fontSize: 16)),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+                return PostCard(post: userPosts[index]);
               },
-              childCount: posts.length,
+              childCount: userPosts.isEmpty ? 1 : userPosts.length,
             ),
           )
         ],

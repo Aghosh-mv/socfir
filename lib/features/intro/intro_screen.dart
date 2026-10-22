@@ -129,7 +129,15 @@ class _IntroScreenState extends ConsumerState<IntroScreen>
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Layer 1: Star field
+          // Background Cinematic Space Nebula Artwork
+          if (_phase == _IntroPhase.space || _phase == _IntroPhase.zoom)
+            Image.network(
+              'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?w=1600&auto=format&fit=crop',
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => const SizedBox(),
+            ),
+
+          // Layer 1: Dynamic Star field & cosmic glow overlay
           if (_phase == _IntroPhase.space || _phase == _IntroPhase.zoom)
             AnimatedBuilder(
               animation: _starsController,

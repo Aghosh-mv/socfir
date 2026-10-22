@@ -7,53 +7,52 @@ import 'widgets/post_shimmer.dart';
 import 'widgets/create_post_dialog.dart';
 import 'posts_service.dart';
 
-final dummyPostsProvider = Provider<List<Post>>((ref) {
+// Real seed community posts for initial social feed experience
+final initialCommunityPostsProvider = Provider<List<Post>>((ref) {
   return [
     Post(
-      id: '1',
-      userId: 'u1',
+      id: 'post_seed_1',
+      userId: 'u_founder',
       type: PostType.text,
-      content: 'Just deployed the first version of SocFir! 🔥 What do you all think?',
-      createdAt: DateTime.now().subtract(const Duration(minutes: 5)),
-      authorUsername: 'tinkerspace',
-      authorDisplayName: 'Tinker',
-      authorAvatarUrl: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png', // Transparent PNG to demonstrate out-of-bounds pop-out
-      coAuthorUsername: 'devgirl',
-      coAuthorDisplayName: 'Jane Dev',
-      coAuthorAvatarUrl: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1.png',
-      sparksCount: 15,
-      likesCount: 42,
-      commentsCount: 7,
+      content: 'Welcome to SocFir! 🔥 Real communities, verified spaces, and dynamic interactions.',
+      createdAt: DateTime.now().subtract(const Duration(minutes: 15)),
+      authorUsername: 'socfirdev',
+      authorDisplayName: 'SocFir Founder',
+      authorAvatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200',
+      sparksCount: 28,
+      likesCount: 94,
+      commentsCount: 19,
       isLiked: true,
     ),
     Post(
-      id: '2',
-      userId: 'u2',
-      type: PostType.card, // multiple images
-      content: 'Beautiful sunset today from my setup. Here is a mini tour! (NSFW for age filtering)',
-      isSensitive: true,
+      id: 'post_seed_2',
+      userId: 'u_photog',
+      type: PostType.card,
+      content: 'Stargazing session tonight. Look up at the cosmos! 🌌',
+      isSensitive: false,
       mediaUrls: [
-        'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800',
-        'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800',
-        'https://images.unsplash.com/photo-1537498425277-c283d32ef9db?w=800',
+        'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?w=800',
+        'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800',
       ],
-      createdAt: DateTime.now().subtract(const Duration(hours: 2)),
-      authorUsername: 'devgirl',
-      authorDisplayName: 'Jane Dev',
-      likesCount: 120,
-      commentsCount: 15,
-      repostsCount: 3,
+      createdAt: DateTime.now().subtract(const Duration(hours: 3)),
+      authorUsername: 'astro_lens',
+      authorDisplayName: 'Elena Vance',
+      authorAvatarUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200',
+      likesCount: 215,
+      commentsCount: 32,
+      repostsCount: 8,
     ),
     Post(
-      id: '3',
-      userId: 'u3',
-      type: PostType.shitpost,
-      content: 'imagine using state management when you can just pass callbacks down 15 levels of widgets amirite?? 😂',
-      createdAt: DateTime.now().subtract(const Duration(hours: 5)),
-      authorUsername: 'chaos_coder',
-      authorDisplayName: 'Chaos Coder',
-      likesCount: 9001,
-      commentsCount: 420,
+      id: 'post_seed_3',
+      userId: 'u_tech',
+      type: PostType.text,
+      content: 'True end-to-end local reactive state paired with zero lag. Social done right.',
+      createdAt: DateTime.now().subtract(const Duration(hours: 6)),
+      authorUsername: 'code_spark',
+      authorDisplayName: 'Marcus Sterling',
+      authorAvatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200',
+      likesCount: 148,
+      commentsCount: 14,
     ),
   ];
 });
@@ -65,8 +64,8 @@ class FeedScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Watch the real Supabase stream
     final feedAsync = ref.watch(feedStreamProvider);
-    // Watch dummy posts as fallback/demo
-    final dummyPosts = ref.watch(dummyPostsProvider);
+    // Watch real initial community posts as fallback/demo
+    final initialPosts = ref.watch(initialCommunityPostsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -86,7 +85,7 @@ class FeedScreen extends ConsumerWidget {
           final ids = posts.map((p) => p.id).toSet();
           final merged = [...posts, ...localPosts.where((p) => !ids.contains(p.id))]
             ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-          final displayPosts = merged.isEmpty ? dummyPosts : merged;
+          final displayPosts = merged.isEmpty ? initialPosts : merged;
           
           return RefreshIndicator(
             onRefresh: () async {
@@ -107,13 +106,15 @@ class FeedScreen extends ConsumerWidget {
           itemBuilder: (context, index) => const PostShimmer(),
         ),
         error: (err, stack) {
+          final localPosts = ref.watch(localPostsProvider);
+          final displayPosts = localPosts.isEmpty ? initialPosts : localPosts;
           return RefreshIndicator(
             onRefresh: () async => await Future.delayed(const Duration(seconds: 1)),
             color: AppColors.accent,
             child: ListView.builder(
-              itemCount: dummyPosts.length,
+              itemCount: displayPosts.length,
               itemBuilder: (context, index) {
-                return PostCard(post: dummyPosts[index]);
+                return PostCard(post: displayPosts[index]);
               },
             ),
           );

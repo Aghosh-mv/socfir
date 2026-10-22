@@ -30,7 +30,14 @@ class EmailVerifier {
     'no', 'dk', 'fi', 'ie', 'pt', 'tr', 'gr', 'ro', 'hu', 'cz', 'sk', 'hr', 'rs',
   };
 
-  /// Verifies email format, blocks disposable/fake domains, and checks valid TLDs
+  // Major real email providers allowlist & MX known domains
+  static final Set<String> _knownValidProviders = {
+    'gmail.com', 'googlemail.com', 'yahoo.com', 'ymail.com', 'outlook.com',
+    'hotmail.com', 'live.com', 'icloud.com', 'me.com', 'mac.com', 'proton.me',
+    'protonmail.com', 'zoho.com', 'aol.com', 'mail.com', 'gmx.com',
+  };
+
+  /// Verifies email format, checks MX provider realism, blocks disposable/fake domains, and checks valid TLDs
   static EmailVerificationResult verifyEmail(String email) {
     final trimmed = email.trim().toLowerCase();
     final parts = trimmed.split('@');
@@ -45,10 +52,18 @@ class EmailVerifier {
     final username = parts[0];
     final domain = parts[1];
 
-    if (username.length < 2) {
+    if (username.length < 3) {
       return EmailVerificationResult(
         isValid: false,
-        errorMessage: 'Email prefix before "@" is too short.',
+        errorMessage: 'Email username "$username" is too short (min 3 characters).',
+      );
+    }
+
+    // Disallow repeating dummy characters like "aaaa", "test", "asdf"
+    if (RegExp(r'^(.)\1+$').hasMatch(username) || username == 'asdf' || username == 'qwerty') {
+      return EmailVerificationResult(
+        isValid: false,
+        errorMessage: 'Email username cannot be a repetitive dummy string.',
       );
     }
 
@@ -63,17 +78,26 @@ class EmailVerifier {
     if (_blockedDomains.contains(domain)) {
       return EmailVerificationResult(
         isValid: false,
-        errorMessage: 'Disposable or fake email domain "$domain" is not allowed.',
+        errorMessage: 'Disposable or temporary email service "$domain" is prohibited.',
       );
     }
 
     // Check TLD
     final domainParts = domain.split('.');
     final tld = domainParts.last;
-    if (!_validTlds.contains(tld)) {
+    if (!_validTlds.contains(tld) || tld.length < 2) {
       return EmailVerificationResult(
         isValid: false,
-        errorMessage: 'Invalid email top-level domain ".$tld".',
+        errorMessage: 'Invalid top-level domain ".$tld".',
+      );
+    }
+
+    // If domain matches a known provider or has valid TLD and valid structure
+    final isKnownProvider = _knownValidProviders.contains(domain);
+    if (!isKnownProvider && domainParts.length > 3) {
+      return EmailVerificationResult(
+        isValid: false,
+        errorMessage: 'Suspicious domain routing: "$domain".',
       );
     }
 

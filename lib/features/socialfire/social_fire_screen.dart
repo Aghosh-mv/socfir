@@ -14,45 +14,33 @@ class FireViewer {
 
 // ─── PROVIDER ────────────────────────────────────────────────────────────────
 
-final socialFireProvider = Provider<List<_FirePost>>((ref) => _dummyPosts);
+final socialFireProvider = Provider<List<_FirePost>>((ref) => _initialFirePosts);
 
-final _dummyPosts = [
+final _initialFirePosts = [
   _FirePost(
-    id: '1',
-    content: 'Just shipped SocFir v1 — the fastest social app alive 🔥',
-    likes: 142,
-    comments: 38,
-    views: 1820,
-    postedAt: DateTime.now().subtract(const Duration(hours: 2)),
+    id: 'fire_1',
+    content: 'Just launched SocFir into high gear! 🚀 Pure fluid experience.',
+    likes: 184,
+    comments: 42,
+    views: 2150,
+    postedAt: DateTime.now().subtract(const Duration(hours: 1)),
     viewers: [
-      FireViewer(username: 'devgirl'),
-      FireViewer(username: 'flutter_guru'),
-      FireViewer(username: 'ui_master'),
-      FireViewer(username: 'someone', isHidden: true),
-      FireViewer(username: 'another_user'),
+      FireViewer(username: 'elena_v'),
+      FireViewer(username: 'marcus_s'),
+      FireViewer(username: 'socfirdev'),
+      FireViewer(username: 'anonymous_user', isHidden: true),
     ],
   ),
   _FirePost(
-    id: '2',
-    content: 'Dark mode + orange accents = premium perfection 🧡',
-    likes: 67,
-    comments: 12,
-    views: 540,
-    postedAt: DateTime.now().subtract(const Duration(hours: 8)),
+    id: 'fire_2',
+    content: 'Dark mode + ambient orange glow. The energy is unreal. 🔥',
+    likes: 92,
+    comments: 18,
+    views: 730,
+    postedAt: DateTime.now().subtract(const Duration(hours: 5)),
     viewers: [
-      FireViewer(username: 'fanboy_42'),
-      FireViewer(username: 'kode_lover'),
-    ],
-  ),
-  _FirePost(
-    id: '3',
-    content: 'Just added Whispers to DMs. Some secrets deserve to burn.',
-    likes: 21,
-    comments: 5,
-    views: 98,
-    postedAt: DateTime.now().subtract(const Duration(days: 1)),
-    viewers: [
-      FireViewer(username: 'curious_cat'),
+      FireViewer(username: 'astro_lens'),
+      FireViewer(username: 'socfirdev'),
     ],
   ),
 ];
