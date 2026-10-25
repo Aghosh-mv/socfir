@@ -31,7 +31,7 @@ class SettingsScreen extends ConsumerWidget {
               ref.read(isDarkModeProvider.notifier).toggle();
             },
             secondary: Icon(isDark ? Icons.dark_mode : Icons.light_mode),
-            activeColor: Theme.of(context).primaryColor,
+            activeThumbColor: Theme.of(context).primaryColor,
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),

@@ -287,7 +287,7 @@ class _NotifToggle extends StatelessWidget {
         title: Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
         subtitle: Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.grey)),
         value: value,
-        activeColor: color,
+        activeThumbColor: color,
         onChanged: onChanged,
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),

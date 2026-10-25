@@ -52,3 +52,4 @@ pubspec.lock
 # Environment files (no secrets in repo)
 .env
 .env.*
+desktop/node_modules/

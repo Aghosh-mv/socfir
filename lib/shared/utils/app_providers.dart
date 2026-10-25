@@ -48,7 +48,7 @@ class AccentColorNotifier extends Notifier<Color> {
 
   void setColor(Color color) {
     state = color;
-    ref.read(sharedPrefsProvider).setInt('accent_color', color.value);
+    ref.read(sharedPrefsProvider).setInt('accent_color', color.toARGB32());
   }
 }
 

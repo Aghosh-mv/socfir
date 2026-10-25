@@ -12,7 +12,7 @@ void main() async {
   // Initialize Supabase
   await Supabase.initialize(
     url: const String.fromEnvironment('SUPABASE_URL', defaultValue: 'YOUR_SUPABASE_URL'),
-    anonKey: const String.fromEnvironment('SUPABASE_ANON_KEY', defaultValue: 'YOUR_SUPABASE_ANON_KEY'),
+    publishableKey: const String.fromEnvironment('SUPABASE_ANON_KEY', defaultValue: 'YOUR_SUPABASE_ANON_KEY'),
   );
 
   final prefs = await SharedPreferences.getInstance();

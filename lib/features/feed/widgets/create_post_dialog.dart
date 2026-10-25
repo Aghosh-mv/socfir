@@ -71,7 +71,7 @@ class _CreatePostDialogState extends ConsumerState<CreatePostDialog> {
                 Switch(
                   value: _isSensitive,
                   onChanged: (val) => setState(() => _isSensitive = val),
-                  activeColor: Colors.red,
+                  activeThumbColor: Colors.red,
                 ),
               ],
             ),

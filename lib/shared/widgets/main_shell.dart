@@ -106,7 +106,7 @@ class _NavButtonState extends State<_NavButton> {
             color: widget.isActive
                 ? AppColors.accentGlow
                 : _hovered
-                    ? (widget.isDark ? Colors.white10 : Colors.black.withOpacity(0.05))
+                    ? (widget.isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05))
                     : Colors.transparent,
             borderRadius: BorderRadius.circular(14),
           ),

@@ -268,7 +268,7 @@ class _StarFieldPainter extends CustomPainter {
         // Draw streaks
         if (zoomProgress > 0.1) {
           final streakPaint = Paint()
-            ..color = Colors.white.withOpacity(opacity * 0.6)
+            ..color = Colors.white.withValues(alpha: opacity * 0.6)
             ..strokeWidth = r * 0.6
             ..style = PaintingStyle.stroke;
           canvas.drawLine(
@@ -279,7 +279,7 @@ class _StarFieldPainter extends CustomPainter {
         }
       }
 
-      paint.color = Colors.white.withOpacity(opacity.toDouble());
+      paint.color = Colors.white.withValues(alpha: opacity.toDouble());
       canvas.drawCircle(Offset(x, y), r, paint);
     }
   }
@@ -301,7 +301,7 @@ class _ZoomBlurPainter extends CustomPainter {
       radius: 0.6,
       colors: [
         Colors.transparent,
-        AppColors.universeBg.withOpacity((progress * 0.7).clamp(0.0, 0.7)),
+        AppColors.universeBg.withValues(alpha: (progress * 0.7).clamp(0.0, 0.7)),
       ],
     );
     final paint = Paint()
@@ -314,7 +314,7 @@ class _ZoomBlurPainter extends CustomPainter {
       final flash = (progress - 0.8) / 0.2;
       canvas.drawRect(
         Rect.fromLTWH(0, 0, size.width, size.height),
-        Paint()..color = Colors.white.withOpacity(flash),
+        Paint()..color = Colors.white.withValues(alpha: flash),
       );
     }
   }

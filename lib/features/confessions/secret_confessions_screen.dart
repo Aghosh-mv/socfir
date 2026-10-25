@@ -70,7 +70,7 @@ class SecretConfessionsScreen extends ConsumerWidget {
               subtitle: 'When you\'re both in the same DM at the same time, your phones pulse together. Only you two will know.',
               trailing: Switch.adaptive(
                 value: heartbeatOn,
-                activeColor: Colors.redAccent,
+                activeThumbColor: Colors.redAccent,
                 onChanged: (val) {
                   HapticFeedback.lightImpact();
                   ref.read(heartbeatSyncEnabledProvider.notifier).toggle();
