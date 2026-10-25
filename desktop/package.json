@@ -1,0 +1,12 @@
+{
+  "name": "socfir-desktop",
+  "version": "1.0.0",
+  "description": "SocFir Desktop Application",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^33.4.11"
+  }
+}
