@@ -77,18 +77,23 @@ class EmailVerifier {
     final username = parts[0];
     final domain = parts[1];
 
-    if (username.length < 3) {
+    if (username.length < 5) {
       return EmailVerificationResult(
         isValid: false,
-        errorMessage: 'Email username "$username" is too short (min 3 characters).',
+        errorMessage: 'Email username "$username" is too short (min 5 characters).',
       );
     }
 
-    // Disallow repeating dummy characters like "aaaa", "test", "asdf"
-    if (RegExp(r'^(.)\1+$').hasMatch(username) || username == 'asdf' || username == 'qwerty' || username == 'test') {
+    // Disallow keyboard mashing, repeated chars, or common random gibberish
+    final isKeyboardMash = RegExp(r'^(asdf|qwerty|zxcv|hjkl|ghjk|qwer|1234|test|fake|junk|random|dummy|sample)', caseSensitive: false).hasMatch(username);
+    final isRepetitive = RegExp(r'^(.)\1+$').hasMatch(username);
+    final hasNoVowels = !RegExp(r'[aeiouy0-9]', caseSensitive: false).hasMatch(username); // e.g. "hdj", "sdfg"
+    final isConsonantCluster = RegExp(r'[bcdfghjklmnpqrstvwxyz]{5,}', caseSensitive: false).hasMatch(username); // 5 consecutive consonants like "bcdfgh"
+
+    if (isRepetitive || isKeyboardMash || hasNoVowels || isConsonantCluster) {
       return EmailVerificationResult(
         isValid: false,
-        errorMessage: 'Email username cannot be a repetitive dummy string.',
+        errorMessage: 'Please enter a genuine, recognizable email address (random gibberish is not allowed).',
       );
     }
 

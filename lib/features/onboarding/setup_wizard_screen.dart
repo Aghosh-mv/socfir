@@ -26,9 +26,43 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
   final _displayNameCtrl = TextEditingController();
   final _bioCtrl = TextEditingController();
   final _educationCtrl = TextEditingController();
-  final _hobbiesCtrl = TextEditingController();
+  final _otherJobCtrl = TextEditingController();
+  final _otherHobbyCtrl = TextEditingController();
   final _projectsCtrl = TextEditingController();
-  final _jobsCtrl = TextEditingController();
+
+  // Dropdown Selections
+  String? _selectedJob;
+  String? _selectedHobby;
+
+  static const List<String> kAvailableJobs = [
+    'Software Engineer',
+    'Product Designer',
+    'Data Scientist',
+    'Product Manager',
+    'Student / Researcher',
+    'Founder / Entrepreneur',
+    'Marketing Specialist',
+    'Financial Analyst',
+    'Doctor / Healthcare',
+    'Lawyer / Legal Counsel',
+    'Artist / Creator',
+    'Other (Specify)',
+  ];
+
+  static const List<String> kAvailableHobbies = [
+    'Coding & Open Source',
+    'Reading & Literature',
+    'Gaming & Esports',
+    'Fitness & Weightlifting',
+    'Hiking & Outdoors',
+    'Music & Production',
+    'Photography & Film',
+    'Cooking & Culinary Arts',
+    'Chess & Strategy Games',
+    'Traveling & Exploring',
+    'Writing & Blogging',
+    'Other (Specify)',
+  ];
 
   // Validation Error Strings
   String? _emailError;
@@ -38,6 +72,8 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
   String? _ageError;
   String? _bioError;
   String? _educationError;
+  String? _jobError;
+  String? _hobbyError;
 
   @override
   void dispose() {
@@ -49,9 +85,9 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
     _displayNameCtrl.dispose();
     _bioCtrl.dispose();
     _educationCtrl.dispose();
-    _hobbiesCtrl.dispose();
+    _otherJobCtrl.dispose();
+    _otherHobbyCtrl.dispose();
     _projectsCtrl.dispose();
-    _jobsCtrl.dispose();
     super.dispose();
   }
 
@@ -64,6 +100,8 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
       _ageError = null;
       _bioError = null;
       _educationError = null;
+      _jobError = null;
+      _hobbyError = null;
     });
   }
 
@@ -150,6 +188,24 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
         _educationError = 'Education is required (e.g. MIT, High School, Self-Taught).';
         isValid = false;
       }
+
+      // Validate Job Selection
+      if (_selectedJob == null) {
+        _jobError = 'Please select your profession from the dropdown.';
+        isValid = false;
+      } else if (_selectedJob == 'Other (Specify)' && _otherJobCtrl.text.trim().isEmpty) {
+        _jobError = 'Please specify your profession.';
+        isValid = false;
+      }
+    } else if (step == 3) {
+      // Validate Hobby Selection
+      if (_selectedHobby == null) {
+        _hobbyError = 'Please select a primary interest/hobby from the dropdown.';
+        isValid = false;
+      } else if (_selectedHobby == 'Other (Specify)' && _otherHobbyCtrl.text.trim().isEmpty) {
+        _hobbyError = 'Please specify your interest/hobby.';
+        isValid = false;
+      }
     }
 
     setState(() {});
@@ -180,7 +236,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
 
   Future<void> _finishSetup() async {
     // Validate all steps, jump to first failing one
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i <= 3; i++) {
       final isValid = await _validateStep(i);
       if (!isValid) {
         _pageController.jumpToPage(i);
@@ -197,6 +253,9 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
     setState(() => _isLoading = true);
     try {
       final age = int.tryParse(_ageCtrl.text.trim()) ?? 18;
+      final finalJob = _selectedJob == 'Other (Specify)' ? _otherJobCtrl.text.trim() : (_selectedJob ?? '');
+      final finalHobby = _selectedHobby == 'Other (Specify)' ? _otherHobbyCtrl.text.trim() : (_selectedHobby ?? '');
+
       await ref.read(authServiceProvider).signUp(
         email: _emailCtrl.text.trim(),
         password: _passwordCtrl.text, // Don't trim passwords
@@ -205,9 +264,9 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
         displayName: _displayNameCtrl.text.trim(),
         bio: _bioCtrl.text.trim(),
         education: _educationCtrl.text.trim(),
-        hobbies: _hobbiesCtrl.text.isNotEmpty ? _hobbiesCtrl.text.split(',').map((e) => e.trim()).toList() : [],
+        hobbies: finalHobby.isNotEmpty ? [finalHobby] : [],
         projects: _projectsCtrl.text.isNotEmpty ? _projectsCtrl.text.split(',').map((e) => e.trim()).toList() : [],
-        jobs: _jobsCtrl.text.isNotEmpty ? _jobsCtrl.text.split(',').map((e) => e.trim()).toList() : [],
+        jobs: finalJob.isNotEmpty ? [finalJob] : [],
       );
       if (mounted) context.go('/feed');
     } catch (e) {
@@ -237,6 +296,49 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
         keyboardType: type,
         onChanged: (_) {
           if (errorText != null) setState(() => _clearErrors());
+        },
+        decoration: InputDecoration(
+          labelText: label,
+          errorText: errorText,
+          filled: true,
+          fillColor: Theme.of(context).cardColor,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Colors.red, width: 1.5),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Colors.red, width: 2),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDropdownField({
+    required String label,
+    required String? value,
+    required List<String> items,
+    required ValueChanged<String?> onChanged,
+    String? errorText,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: DropdownButtonFormField<String>(
+        value: value,
+        items: items
+            .map((item) => DropdownMenuItem(
+                  value: item,
+                  child: Text(item, overflow: TextOverflow.ellipsis),
+                ))
+            .toList(),
+        onChanged: (val) {
+          onChanged(val);
+          _clearErrors();
         },
         decoration: InputDecoration(
           labelText: label,
@@ -298,7 +400,15 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
           const Text('Your education and current occupation.'),
           const SizedBox(height: 32),
           _buildTextField('Education', _educationCtrl, errorText: _educationError),
-          _buildTextField('Jobs (Comma separated)', _jobsCtrl),
+          _buildDropdownField(
+            label: 'Profession / Job',
+            value: _selectedJob,
+            items: kAvailableJobs,
+            onChanged: (val) => setState(() => _selectedJob = val),
+            errorText: _jobError,
+          ),
+          if (_selectedJob == 'Other (Specify)')
+            _buildTextField('Specify Profession', _otherJobCtrl, errorText: _jobError),
         ],
       ),
       // Step 3: Interests
@@ -309,7 +419,15 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
           const SizedBox(height: 8),
           const Text('What do you love working on or doing?'),
           const SizedBox(height: 32),
-          _buildTextField('Hobbies (Comma separated)', _hobbiesCtrl),
+          _buildDropdownField(
+            label: 'Primary Hobby / Interest',
+            value: _selectedHobby,
+            items: kAvailableHobbies,
+            onChanged: (val) => setState(() => _selectedHobby = val),
+            errorText: _hobbyError,
+          ),
+          if (_selectedHobby == 'Other (Specify)')
+            _buildTextField('Specify Hobby', _otherHobbyCtrl, errorText: _hobbyError),
           _buildTextField('Projects (Comma separated)', _projectsCtrl),
         ],
       ),
