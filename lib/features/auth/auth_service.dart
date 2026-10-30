@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -130,15 +129,13 @@ class AuthService {
 
       if (res.user != null) {
         userId = res.user!.id;
-        final random = Random();
-        final randomAvatarUrl = 'https://api.dicebear.com/7.x/avataaars/svg?seed=${random.nextInt(1000)}';
 
         await _client.from('socfir_users').insert({
           'id': userId,
           'username': username,
           'display_name': displayName,
           'email': email,
-          'avatar_url': randomAvatarUrl,
+          'avatar_url': null,
           'age': age,
           'bio': bio ?? '',
           'education': education ?? '',
@@ -157,7 +154,7 @@ class AuthService {
       username: username,
       email: email,
       displayName: displayName?.isNotEmpty == true ? displayName : username,
-      avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200',
+      avatarUrl: null, // Blank until user adds a profile picture
       age: age,
       bio: bio ?? '',
       education: education ?? '',
@@ -272,9 +269,9 @@ class AuthService {
       username: match['username'] ?? query,
       email: match['email'] ?? query,
       displayName: match['display_name'] ?? match['username'] ?? query,
-      avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200',
+      avatarUrl: match['avatar_url'], // Null / blank if no photo was uploaded
       age: match['age'] ?? 21,
-      bio: match['bio'] ?? 'Developer & Founder of SocFir 🔥',
+      bio: match['bio'] ?? '',
       isOnboarded: true,
       createdAt: DateTime.now(),
     );
