@@ -85,8 +85,8 @@ class AuthService {
     List<String> projects = const [],
     List<String> jobs = const [],
   }) async {
-    // 1. Email verification & domain check
-    final verification = EmailVerifier.verifyEmail(email);
+    // 1. Email verification & domain check (live DNS verification)
+    final verification = await EmailVerifier.verifyEmailLive(email);
     if (!verification.isValid) {
       throw Exception(verification.errorMessage ?? 'Invalid email address.');
     }

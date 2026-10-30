@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
 class EmailVerificationResult {
   final bool isValid;
   final String? errorMessage;
@@ -28,7 +31,7 @@ class EmailVerifier {
     'generator.email', 'crazymailing.com', 'dropmail.me', 'mohmal.com', 'mytemp.email',
     'fakemailgenerator.com', 'emailondeck.com', 'burnerdeals.com', 'burnermail.io',
     'tempail.com', 'disposablemail.com', 'tmpmail.org', 'tmpmail.net', 'fakemail.net',
-    'internxt.com', 'crazymailing.com', 'maildrop.cc', 'harakirimail.com', 'receive-sms-free.cc',
+    'internxt.com', 'maildrop.cc', 'harakirimail.com', 'receive-sms-free.cc',
     'tempr.email', 'discard.email', 'discardmail.com', 'spambog.com', 'trashmail.org',
     'minuteinbox.com', 'mohmal.in', 'emailfake.com', 'zillamail.com', 'bupmail.com',
     'deadaddress.com', 'mytempemail.com', 'trash-mail.com', 'jetable.org', 'luxusmail.org',
@@ -41,7 +44,7 @@ class EmailVerifier {
     'mailinator', 'trashmail', 'fakeinbox', 'fakemail', 'generator', 'yopmail',
     'burner', 'inboxclean', 'mohmal', 'discard', 'spambox', 'spambog',
     'emailondeck', 'dropmail', 'minuteinbox', 'anonymbox', 'instantemail',
-    'tmpmail', 'mytemp', 'dispostable',
+    'tmpmail', 'mytemp', 'dispostable', 'temp',
   ];
 
   // Valid TLDs
@@ -59,7 +62,7 @@ class EmailVerifier {
     'protonmail.com', 'zoho.com', 'aol.com', 'mail.com', 'gmx.com',
   };
 
-  /// Verifies email format, checks MX provider realism, blocks disposable/fake domains, and checks valid TLDs
+  /// Synchronous verification of format, syntax, disposable domains, and structure
   static EmailVerificationResult verifyEmail(String email) {
     final trimmed = email.trim().toLowerCase();
     final parts = trimmed.split('@');
@@ -82,7 +85,7 @@ class EmailVerifier {
     }
 
     // Disallow repeating dummy characters like "aaaa", "test", "asdf"
-    if (RegExp(r'^(.)\1+$').hasMatch(username) || username == 'asdf' || username == 'qwerty') {
+    if (RegExp(r'^(.)\1+$').hasMatch(username) || username == 'asdf' || username == 'qwerty' || username == 'test') {
       return EmailVerificationResult(
         isValid: false,
         errorMessage: 'Email username cannot be a repetitive dummy string.',
@@ -100,7 +103,7 @@ class EmailVerifier {
     if (_blockedDomains.contains(domain)) {
       return EmailVerificationResult(
         isValid: false,
-        errorMessage: 'Disposable or temporary email service "$domain" is prohibited.',
+        errorMessage: 'Temporary or disposable email address ($domain) is prohibited.',
       );
     }
 
@@ -124,15 +127,6 @@ class EmailVerifier {
       );
     }
 
-    // If domain matches a known provider or has valid TLD and valid structure
-    final isKnownProvider = _knownValidProviders.contains(domain);
-    if (!isKnownProvider && domainParts.length > 3) {
-      return EmailVerificationResult(
-        isValid: false,
-        errorMessage: 'Suspicious domain routing: "$domain".',
-      );
-    }
-
     // Infer birth year from username prefix if present
     final inferredYear = _extractBirthYear(username);
     int? inferredAge;
@@ -145,6 +139,64 @@ class EmailVerifier {
       inferredBirthYear: inferredYear,
       inferredAge: inferredAge,
     );
+  }
+
+  /// Asynchronous check against Google DNS over HTTPS to ensure the domain actually exists and has active MX mail exchangers
+  static Future<EmailVerificationResult> verifyEmailLive(String email) async {
+    final basicCheck = verifyEmail(email);
+    if (!basicCheck.isValid) {
+      return basicCheck;
+    }
+
+    final trimmed = email.trim().toLowerCase();
+    final domain = trimmed.split('@')[1];
+
+    // Known providers with guaranteed active MX
+    if (_knownValidProviders.contains(domain)) {
+      return basicCheck;
+    }
+
+    try {
+      final url = Uri.parse('https://dns.google/resolve?name=$domain&type=MX');
+      final response = await http.get(url).timeout(const Duration(seconds: 4));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final status = data['Status'] as int? ?? -1;
+        final answer = data['Answer'] as List<dynamic>?;
+
+        // Status 3 is NXDOMAIN (domain does not exist)
+        if (status == 3) {
+          return EmailVerificationResult(
+            isValid: false,
+            errorMessage: 'The email domain "$domain" does not exist.',
+          );
+        }
+
+        // If no Answer section with MX records
+        if (answer == null || answer.isEmpty) {
+          return EmailVerificationResult(
+            isValid: false,
+            errorMessage: 'The email domain "$domain" cannot receive emails (No MX mail exchanger found).',
+          );
+        }
+
+        // Check if MX points to park/disposable servers
+        for (final record in answer) {
+          final mxData = (record['data'] as String? ?? '').toLowerCase();
+          if (mxData.contains('park') || mxData.contains('above.com') || mxData.contains('sinkhole')) {
+            return EmailVerificationResult(
+              isValid: false,
+              errorMessage: 'The domain "$domain" is a parked or disposable domain.',
+            );
+          }
+        }
+      }
+    } catch (_) {
+      // In offline/sandboxed environments where external DNS API is unreachable, fall back to syntax and known list
+    }
+
+    return basicCheck;
   }
 
   /// Extracts 4-digit or 2-digit birth year from email username (e.g. user1998 -> 1998, alex05 -> 2005)

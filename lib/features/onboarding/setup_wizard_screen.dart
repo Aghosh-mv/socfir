@@ -67,20 +67,22 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
     });
   }
 
-  bool _validateStep(int step) {
+  Future<bool> _validateStep(int step) async {
     _clearErrors();
     bool isValid = true;
 
     if (step == 0) {
-      // Validate Email using EmailVerifier (format, domain blocklist, TLD check)
+      // Validate Email using EmailVerifier (format, domain blocklist, TLD check, live DNS verification)
       final email = _emailCtrl.text.trim();
-      final verification = EmailVerifier.verifyEmail(email);
       if (email.isEmpty) {
         _emailError = 'Email is required.';
         isValid = false;
-      } else if (!verification.isValid) {
-        _emailError = verification.errorMessage;
-        isValid = false;
+      } else {
+        final verification = await EmailVerifier.verifyEmailLive(email);
+        if (!verification.isValid) {
+          _emailError = verification.errorMessage;
+          isValid = false;
+        }
       }
 
       // Validate Password
@@ -90,6 +92,9 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
         isValid = false;
       } else if (pass.length < 6) {
         _passwordError = 'Password must be at least 6 characters.';
+        isValid = false;
+      } else if (!RegExp(r'[0-9]').hasMatch(pass) || !RegExp(r'[a-zA-Z]').hasMatch(pass)) {
+        _passwordError = 'Password must include both letters and numbers.';
         isValid = false;
       }
 
@@ -151,8 +156,12 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
     return isValid;
   }
 
-  void _nextStep() {
-    if (!_validateStep(_currentStep)) {
+  Future<void> _nextStep() async {
+    setState(() => _isLoading = true);
+    final isValid = await _validateStep(_currentStep);
+    setState(() => _isLoading = false);
+
+    if (!isValid) {
       return;
     }
 
@@ -172,7 +181,8 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
   Future<void> _finishSetup() async {
     // Validate all steps, jump to first failing one
     for (int i = 0; i < 3; i++) {
-      if (!_validateStep(i)) {
+      final isValid = await _validateStep(i);
+      if (!isValid) {
         _pageController.jumpToPage(i);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
