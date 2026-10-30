@@ -69,6 +69,7 @@ class PostsService {
     final posts = _getLocalPosts();
     posts.insert(0, postData);
     await prefs.setString('local_posts_db', jsonEncode(posts));
+    _ref.invalidate(localPostsProvider);
   }
 
   Future<void> createPost({
@@ -84,6 +85,8 @@ class PostsService {
   }) async {
     final userId = _currentUserId;
     if (userId == null) throw Exception('Not logged in');
+
+    final authorUser = _ref.read(currentUserProvider);
 
     final postData = {
       'id': 'local_${DateTime.now().millisecondsSinceEpoch}',
@@ -103,6 +106,11 @@ class PostsService {
       'views_count': 0,
       'sparks_count': 0,
       'created_at': DateTime.now().toIso8601String(),
+      'socfir_users': {
+        'username': authorUser?.username ?? 'socfirdev',
+        'display_name': authorUser?.displayName ?? authorUser?.username ?? 'socfirdev',
+        'avatar_url': authorUser?.avatarUrl,
+      },
     };
 
     // Try Supabase first

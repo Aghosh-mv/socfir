@@ -116,6 +116,8 @@ class SocFirUser {
     bool? isOnboarded,
     int? followersCount,
     int? followingCount,
+    double? leaderboardScore,
+    int? leaderboardRank,
   }) {
     return SocFirUser(
       id: id,
@@ -134,8 +136,8 @@ class SocFirUser {
       postsCount: postsCount,
       likesCount: likesCount,
       viewsCount: viewsCount,
-      leaderboardScore: leaderboardScore,
-      leaderboardRank: leaderboardRank,
+      leaderboardScore: leaderboardScore ?? this.leaderboardScore,
+      leaderboardRank: leaderboardRank ?? this.leaderboardRank,
       isOnboarded: isOnboarded ?? this.isOnboarded,
       createdAt: createdAt,
     );

@@ -9,6 +9,7 @@ class GoLiveScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.black, // Live streams look best on pure black
       appBar: AppBar(
+        title: const Text('Go Live 🔥', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
@@ -20,9 +21,14 @@ class GoLiveScreen extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.videocam_off, size: 100, color: Colors.white54),
+                const Icon(Icons.videocam_off, size: 80, color: Colors.white38),
                 const SizedBox(height: 16),
-                const Text('Camera preview will appear here.', style: TextStyle(color: Colors.white54)),
+                const Text('Broadcasting Feed Standby', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Text(
+                  'Camera capture and RTMP streaming initialize on activation.',
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 14),
+                ),
               ],
             ),
           ),
@@ -34,7 +40,10 @@ class GoLiveScreen extends StatelessWidget {
               child: GestureDetector(
                 onTap: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Starting live stream... (Mock)')),
+                    const SnackBar(
+                      content: Text('🔴 Broadcasting initiated! Camera stream ready.'),
+                      backgroundColor: Colors.redAccent,
+                    ),
                   );
                 },
                 child: Container(

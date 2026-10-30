@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/post_model.dart';
 import '../../../shared/theme/app_theme.dart';
 
+import '../posts_service.dart';
+
 class CreatePostDialog extends ConsumerStatefulWidget {
   const CreatePostDialog({super.key});
 
@@ -14,15 +16,40 @@ class _CreatePostDialogState extends ConsumerState<CreatePostDialog> {
   final _contentCtrl = TextEditingController();
   PostType _selectedType = PostType.text;
   bool _isSensitive = false;
+  bool _isPosting = false;
 
-  void _post() {
-    if (_contentCtrl.text.trim().isEmpty) return;
+  Future<void> _post() async {
+    final text = _contentCtrl.text.trim();
+    if (text.isEmpty) return;
     
-    // In a real app, this would use SupabaseService to insert.
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Post published! (Mock)')),
-    );
-    Navigator.of(context).pop();
+    setState(() => _isPosting = true);
+    try {
+      await ref.read(postsServiceProvider).createPost(
+        type: _selectedType,
+        content: text,
+        isSensitive: _isSensitive,
+      );
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('🔥 Post published successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to publish post: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isPosting = false);
+    }
   }
 
   @override
@@ -79,14 +106,20 @@ class _CreatePostDialogState extends ConsumerState<CreatePostDialog> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _post,
+                onPressed: _isPosting ? null : _post,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.accent,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text('Post to Universe 🚀', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                child: _isPosting
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Text('Post to Universe 🚀', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               ),
             ),
           ],

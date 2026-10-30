@@ -1,6 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../../shared/utils/app_providers.dart';
+import '../../supabase/supabase_service.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({super.key});
@@ -13,31 +16,58 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _msgCtrl = TextEditingController();
   bool _isWhisperMode = false;
   
-  final List<Map<String, dynamic>> _messages = [
-    {'text': 'Hey! How is the new app?', 'isMe': false, 'isWhisper': false},
-    {'text': 'It is amazing. So smooth.', 'isMe': true, 'isWhisper': false},
-  ];
+  List<Map<String, dynamic>> _messages = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMessages();
+  }
+
+  void _loadMessages() {
+    final prefs = ref.read(sharedPrefsProvider);
+    final raw = prefs.getString('chat_messages_history');
+    if (raw != null && raw.isNotEmpty) {
+      try {
+        final List list = jsonDecode(raw);
+        setState(() {
+          _messages = list.cast<Map<String, dynamic>>();
+        });
+      } catch (_) {}
+    }
+  }
+
+  Future<void> _saveMessages() async {
+    final prefs = ref.read(sharedPrefsProvider);
+    await prefs.setString('chat_messages_history', jsonEncode(_messages));
+  }
 
   void _sendMessage() {
-    if (_msgCtrl.text.trim().isEmpty) return;
+    final text = _msgCtrl.text.trim();
+    if (text.isEmpty) return;
     setState(() {
       _messages.add({
-        'text': _msgCtrl.text.trim(),
+        'text': text,
         'isMe': true,
         'isWhisper': _isWhisperMode,
         'whisperOpened': false,
+        'timestamp': DateTime.now().toIso8601String(),
       });
       _msgCtrl.clear();
     });
+    _saveMessages();
   }
 
   @override
   Widget build(BuildContext context) {
+    final currentUser = ref.watch(currentUserProvider);
+    final peerName = 'SocFir Global Lounge';
+
     return Scaffold(
       appBar: AppBar(
         title: Column(
           children: [
-            const Text('Jane Dev', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            Text(peerName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
             // Heartbeat Sync Indicator
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -53,38 +83,66 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         ),
         centerTitle: true,
         actions: [
-          IconButton(icon: const Icon(Icons.local_fire_department, color: Colors.orange), tooltip: 'Dare Mode', onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('🔥 Dare Mode Activated!')));
-          }),
-          IconButton(icon: const Icon(Icons.videocam), onPressed: () {}),
+          IconButton(
+            icon: const Icon(Icons.local_fire_department, color: Colors.orange),
+            tooltip: 'Dare Mode',
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('🔥 Dare Mode Activated!')));
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline),
+            tooltip: 'Clear Chat',
+            onPressed: () {
+              setState(() => _messages.clear());
+              _saveMessages();
+            },
+          ),
         ],
       ),
       body: Column(
         children: [
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _messages.length,
-              itemBuilder: (context, index) {
-                final msg = _messages[index];
-                return _MessageBubble(
-                  message: msg,
-                  onWhisperOpened: () {
-                    setState(() {
-                      msg['whisperOpened'] = true;
-                    });
-                    // Self destruct after 5 seconds
-                    Future.delayed(const Duration(seconds: 5), () {
-                      if (mounted) {
-                        setState(() {
-                          _messages.removeAt(index);
-                        });
-                      }
-                    });
-                  },
-                );
-              },
-            ),
+            child: _messages.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.chat_bubble_outline, size: 48, color: Colors.grey.shade600),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Welcome to the SocFir Lounge, @${currentUser?.username ?? 'you'}!\nSend your first message or whisper.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.grey.shade400, height: 1.4),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _messages.length,
+                    itemBuilder: (context, index) {
+                      final msg = _messages[index];
+                      return _MessageBubble(
+                        message: msg,
+                        onWhisperOpened: () {
+                          setState(() {
+                            msg['whisperOpened'] = true;
+                          });
+                          _saveMessages();
+                          // Self destruct after 5 seconds
+                          Future.delayed(const Duration(seconds: 5), () {
+                            if (mounted) {
+                              setState(() {
+                                _messages.removeAt(index);
+                              });
+                              _saveMessages();
+                            }
+                          });
+                        },
+                      );
+                    },
+                  ),
           ),
           // Chat Input Area
           Container(

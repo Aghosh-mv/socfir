@@ -70,33 +70,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
     super.dispose();
   }
 
-  final _notifications = [
-    AppNotification(
-      id: '1', userId: 'me', type: NotificationType.follow,
-      actorId: 'u1', actorUsername: 'devgirl',
-      createdAt: DateTime.now().subtract(const Duration(minutes: 2)),
-    ),
-    AppNotification(
-      id: '2', userId: 'me', type: NotificationType.like,
-      actorId: 'u2', actorUsername: 'flutter_guru',
-      createdAt: DateTime.now().subtract(const Duration(minutes: 18)),
-    ),
-    AppNotification(
-      id: '3', userId: 'me', type: NotificationType.comment,
-      actorId: 'u3', actorUsername: 'ui_ux_master',
-      createdAt: DateTime.now().subtract(const Duration(hours: 3)),
-    ),
-    AppNotification(
-      id: '4', userId: 'me', type: NotificationType.mention,
-      actorId: 'u4', actorUsername: 'techbro_99',
-      createdAt: DateTime.now().subtract(const Duration(hours: 6)),
-    ),
-    AppNotification(
-      id: '5', userId: 'me', type: NotificationType.dm,
-      actorId: 'u5', actorUsername: 'jane.dev',
-      createdAt: DateTime.now().subtract(const Duration(hours: 12)),
-    ),
-  ];
+  final List<AppNotification> _notifications = [];
 
   IconData _icon(NotificationType t) {
     switch (t) {
@@ -142,11 +116,31 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
         controller: _tabs,
         children: [
           // ── ACTIVITY TAB ──────────────────────────────────────────────────
-          ListView.separated(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            itemCount: _notifications.length,
-            separatorBuilder: (_, __) => Divider(height: 1, color: Theme.of(context).dividerColor.withValues(alpha: 0.4)),
-            itemBuilder: (context, i) {
+          _notifications.isEmpty
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.notifications_none, size: 64, color: Colors.grey.shade600),
+                        const SizedBox(height: 16),
+                        const Text('All Caught Up', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        Text(
+                          'You have no new notifications.\nInteractions and mentions on your posts will appear here.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.grey.shade400, height: 1.4),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : ListView.separated(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  itemCount: _notifications.length,
+                  separatorBuilder: (_, __) => Divider(height: 1, color: Theme.of(context).dividerColor.withValues(alpha: 0.4)),
+                  itemBuilder: (context, i) {
               final n = _notifications[i];
               return ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),

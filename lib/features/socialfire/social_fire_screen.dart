@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import '../feed/posts_service.dart';
 
 // ─── DATA MODEL ──────────────────────────────────────────────────────────────
 
@@ -14,36 +15,18 @@ class FireViewer {
 
 // ─── PROVIDER ────────────────────────────────────────────────────────────────
 
-final socialFireProvider = Provider<List<_FirePost>>((ref) => _initialFirePosts);
-
-final _initialFirePosts = [
-  _FirePost(
-    id: 'fire_1',
-    content: 'Just launched SocFir into high gear! 🚀 Pure fluid experience.',
-    likes: 184,
-    comments: 42,
-    views: 2150,
-    postedAt: DateTime.now().subtract(const Duration(hours: 1)),
-    viewers: [
-      FireViewer(username: 'elena_v'),
-      FireViewer(username: 'marcus_s'),
-      FireViewer(username: 'socfirdev'),
-      FireViewer(username: 'anonymous_user', isHidden: true),
-    ],
-  ),
-  _FirePost(
-    id: 'fire_2',
-    content: 'Dark mode + ambient orange glow. The energy is unreal. 🔥',
-    likes: 92,
-    comments: 18,
-    views: 730,
-    postedAt: DateTime.now().subtract(const Duration(hours: 5)),
-    viewers: [
-      FireViewer(username: 'astro_lens'),
-      FireViewer(username: 'socfirdev'),
-    ],
-  ),
-];
+final socialFireProvider = Provider<List<_FirePost>>((ref) {
+  final posts = ref.watch(localPostsProvider);
+  return posts.map((p) => _FirePost(
+    id: p.id,
+    content: p.content,
+    likes: p.likesCount,
+    comments: p.commentsCount,
+    views: p.viewsCount,
+    postedAt: p.createdAt,
+    viewers: [],
+  )).toList();
+});
 
 // ─── MODEL ───────────────────────────────────────────────────────────────────
 
