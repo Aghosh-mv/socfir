@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../models/user_model.dart';
+import 'package:go_router/go_router.dart';
+import '../../models/post_model.dart';
 import '../../shared/theme/app_theme.dart';
 import '../../supabase/supabase_service.dart';
+import '../auth/auth_service.dart';
 import '../feed/posts_service.dart';
 import '../feed/widgets/post_card.dart';
 
@@ -16,22 +18,40 @@ class ProfileScreen extends ConsumerWidget {
     
     // Determine profile data: if viewing own profile, use actual currentUser data
     final isMe = username == 'me' || (currentUser != null && currentUser.username == username);
-    final user = isMe && currentUser != null
-        ? currentUser
-        : SocFirUser(
-            id: 'user_$username',
-            username: username,
-            displayName: username,
-            email: '$username@socfir.app',
-            bio: 'Creator & explorer on SocFir 🔥',
-            followersCount: 120,
-            followingCount: 64,
-            likesCount: 380,
-            createdAt: DateTime.now().subtract(const Duration(days: 15)),
-          );
+    final user = isMe ? currentUser : null;
 
     final allLocalPosts = ref.watch(localPostsProvider);
-    final userPosts = allLocalPosts.where((p) => p.authorUsername == user.username || (isMe && p.userId == user.id)).toList();
+    final userPosts = user != null
+        ? allLocalPosts.where((p) => p.authorUsername == user.username || (isMe && p.userId == user.id)).toList()
+        : <Post>[];
+
+    if (user == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text('@$username', style: const TextStyle(fontWeight: FontWeight.bold)),
+          centerTitle: true,
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.person_outline, size: 72, color: Colors.grey.shade600),
+                const SizedBox(height: 16),
+                const Text('Profile Not Set Up', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Text(
+                  'This profile is completely blank until the user adds their details and starts posting.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey.shade400, height: 1.4),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -55,15 +75,29 @@ class ProfileScreen extends ConsumerWidget {
                         backgroundImage: user.avatarUrl != null ? NetworkImage(user.avatarUrl!) : null,
                         child: user.avatarUrl == null ? const Icon(Icons.person, size: 40, color: AppColors.accent) : null,
                       ),
-                      ElevatedButton(
-                        onPressed: () {},
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.accent,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      if (!isMe)
+                        ElevatedButton(
+                          onPressed: () {},
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.accent,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          ),
+                          child: const Text('Follow', style: TextStyle(fontWeight: FontWeight.bold)),
+                        )
+                      else
+                        OutlinedButton.icon(
+                          onPressed: () async {
+                            await ref.read(authServiceProvider).signOut();
+                            if (context.mounted) context.go('/intro');
+                          },
+                          icon: const Icon(Icons.logout, size: 18, color: Colors.redAccent),
+                          label: const Text('Sign Out', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Colors.redAccent),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          ),
                         ),
-                        child: const Text('Follow', style: TextStyle(fontWeight: FontWeight.bold)),
-                      )
                     ],
                   ),
                   const SizedBox(height: 16),

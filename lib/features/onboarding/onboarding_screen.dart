@@ -20,22 +20,22 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     {
       'icon': Icons.local_fire_department_rounded,
       'title': 'Welcome to SocFir 🔥',
-      'desc': 'Like Twitter, Instagram, and LinkedIn had a really cool, chaotic baby. You’ll love it.',
+      'desc': 'A fast, real-time social platform engineered for modern communities and authentic conversations.',
     },
     {
       'icon': Icons.auto_awesome_motion_rounded,
       'title': 'Cards & Carousels',
-      'desc': 'Upload multiple images, and we’ll magically turn them into interactive Cards. Hover over them and see the magic.',
+      'desc': 'Share multi-image stories and media albums cleanly formatted into responsive, interactive cards.',
     },
     {
       'icon': Icons.groups_3_rounded,
-      'title': 'Communities & Vibes',
-      'desc': 'Join spaces that match your energy. 13+? 18+? We blur the bad stuff automatically based on your age.',
+      'title': 'Communities & Spaces',
+      'desc': 'Connect with groups that share your passions. Intelligent safety filters keep feeds secure and family-friendly.',
     },
     {
       'icon': Icons.leaderboard_rounded,
-      'title': 'Climb the Ranks',
-      'desc': 'A global popularity leaderboard. Post fire, get likes, and become the main character of the universe.',
+      'title': 'Real-Time Engagement',
+      'desc': 'Participate in discussions, share your perspective, and build your presence across the global community.',
     }
   ];
 

@@ -257,9 +257,9 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
       Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text('The Basics', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+          const Text('Create Account', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          const Text('Let\'s get your credentials sorted out.'),
+          const Text('Enter your email, password, and username handle.'),
           const SizedBox(height: 32),
           _buildTextField('Email', _emailCtrl, type: TextInputType.emailAddress, errorText: _emailError),
           _buildTextField('Password', _passwordCtrl, isPassword: true, errorText: _passwordError),
@@ -270,34 +270,34 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
       Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text('Who are you?', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+          const Text('Profile Details', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          const Text('Your public persona.'),
+          const Text('Your public name, age, and bio.'),
           const SizedBox(height: 32),
           _buildTextField('Display Name', _displayNameCtrl, errorText: _displayNameError),
-          _buildTextField('Age (Determines content filters!)', _ageCtrl, type: TextInputType.number, errorText: _ageError),
-          _buildTextField('Bio (Be funny, or don\'t)', _bioCtrl, errorText: _bioError),
+          _buildTextField('Age (for content filtering)', _ageCtrl, type: TextInputType.number, errorText: _ageError),
+          _buildTextField('Bio (A short intro)', _bioCtrl, errorText: _bioError),
         ],
       ),
-      // Step 2: Flex a bit
+      // Step 2: Background
       Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text('Flex your stats', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+          const Text('Background & Experience', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          const Text('Where do you study? What do you do?'),
+          const Text('Your education and current occupation.'),
           const SizedBox(height: 32),
           _buildTextField('Education', _educationCtrl, errorText: _educationError),
           _buildTextField('Jobs (Comma separated)', _jobsCtrl),
         ],
       ),
-      // Step 3: Vibes
+      // Step 3: Interests
       Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text('Vibes & Projects', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+          const Text('Interests & Projects', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          const Text('What do you love doing in your free time?'),
+          const Text('What do you love working on or doing?'),
           const SizedBox(height: 32),
           _buildTextField('Hobbies (Comma separated)', _hobbiesCtrl),
           _buildTextField('Projects (Comma separated)', _projectsCtrl),
@@ -339,22 +339,38 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
                 right: 0,
                 left: 0,
                 child: Center(
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _nextStep,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.accent,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 20),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    child: _isLoading 
-                      ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white))
-                      : Text(
-                          _currentStep == steps.length - 1 ? 'Finish & Dive In 🔥' : 'Next',
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ElevatedButton(
+                        onPressed: _isLoading ? null : _nextStep,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.accent,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 20),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                         ),
+                        child: _isLoading 
+                          ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white))
+                          : Text(
+                              _currentStep == steps.length - 1 ? 'Finish Registration' : 'Next',
+                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text('Already have an account? ', style: TextStyle(fontSize: 13, color: Colors.grey)),
+                          GestureDetector(
+                            onTap: () => context.go('/login'),
+                            child: const Text('Sign In', style: TextStyle(color: AppColors.accent, fontSize: 13, fontWeight: FontWeight.bold)),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ),
