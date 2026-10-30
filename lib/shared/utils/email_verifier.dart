@@ -15,12 +15,34 @@ class EmailVerificationResult {
 class EmailVerifier {
   static int get currentYear => DateTime.now().year;
 
-  // Common fake / disposable email domains to block
+  // Comprehensive list of fake / disposable / temporary email domains to block
   static final Set<String> _blockedDomains = {
-    'tempmail.com', 'mailinator.com', '10minutemail.com', 'dispostable.com',
-    'guerrillamail.com', 'trashmail.com', 'fake.com', 'test.com', 'example.com',
-    'asdf.com', 'qwerty.com', 'foo.bar', 'temp.com', 'yopmail.com', 'sharklasers.com',
+    // Top temporary and throwaway mail services
+    'tempmail.com', 'temp-mail.org', 'temp-mail.io', 'tempmail.net', 'tempmail.ninja',
+    'mailinator.com', 'mailinater.com', '10minutemail.com', '10minutemail.net', '10minmail.com',
+    'dispostable.com', 'guerrillamail.com', 'guerrillamail.net', 'guerrillamail.biz', 'guerrillamail.org',
+    'trashmail.com', 'trashmail.net', 'trashmail.me', 'fake.com', 'test.com', 'example.com',
+    'asdf.com', 'qwerty.com', 'foo.bar', 'temp.com', 'yopmail.com', 'yopmail.fr', 'yopmail.net',
+    'sharklasers.com', 'grr.la', 'guerrillamailblock.com', 'pokemail.net', 'spam4.me',
+    'getnada.com', 'nada.ltd', 'abcvg.com', 'inboxkitten.com', 'throwawaymail.com',
+    'generator.email', 'crazymailing.com', 'dropmail.me', 'mohmal.com', 'mytemp.email',
+    'fakemailgenerator.com', 'emailondeck.com', 'burnerdeals.com', 'burnermail.io',
+    'tempail.com', 'disposablemail.com', 'tmpmail.org', 'tmpmail.net', 'fakemail.net',
+    'internxt.com', 'crazymailing.com', 'maildrop.cc', 'harakirimail.com', 'receive-sms-free.cc',
+    'tempr.email', 'discard.email', 'discardmail.com', 'spambog.com', 'trashmail.org',
+    'minuteinbox.com', 'mohmal.in', 'emailfake.com', 'zillamail.com', 'bupmail.com',
+    'deadaddress.com', 'mytempemail.com', 'trash-mail.com', 'jetable.org', 'luxusmail.org',
+    'clipmail.eu', 'drdrb.net', 'byom.de', 'safetymail.info', 'shieldemail.com',
   };
+
+  // Keywords that identify disposable / burner domains even if not on the exact list
+  static final List<String> _disposableKeywords = [
+    'tempmail', 'temp-mail', 'throwaway', 'disposable', '10minute', 'guerrilla',
+    'mailinator', 'trashmail', 'fakeinbox', 'fakemail', 'generator', 'yopmail',
+    'burner', 'inboxclean', 'mohmal', 'discard', 'spambox', 'spambog',
+    'emailondeck', 'dropmail', 'minuteinbox', 'anonymbox', 'instantemail',
+    'tmpmail', 'mytemp', 'dispostable',
+  ];
 
   // Valid TLDs
   static final Set<String> _validTlds = {
@@ -80,6 +102,16 @@ class EmailVerifier {
         isValid: false,
         errorMessage: 'Disposable or temporary email service "$domain" is prohibited.',
       );
+    }
+
+    // Check for disposable domain patterns/keywords
+    for (final kw in _disposableKeywords) {
+      if (domain.contains(kw)) {
+        return EmailVerificationResult(
+          isValid: false,
+          errorMessage: 'Temporary or disposable email addresses are not permitted.',
+        );
+      }
     }
 
     // Check TLD
